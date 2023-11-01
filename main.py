@@ -27,43 +27,47 @@ external_stylesheets = [dmc.theme.DEFAULT_COLORS]
 app = Dash(__name__, external_stylesheets=external_stylesheets)
 
 # App layout
-app.layout = dmc.Container([
-    dmc.Title('My First App with Data, Graph, and Controls', color="blue", size="h3"),
-    dcc.Dropdown(
-        id='player-input',
-        placeholder="Please select all players you want to analyze",
-        options=[{"label": i, "value": i} for i in names],
-        multi=True,
-        #value=list(main_df['Name']),
-        value=main_df.Name.values,
-        style={"width": 400},
-    ),
-    dmc.Grid([
-        dmc.Col([
-            dash_table.DataTable(
-                data=main_df.to_dict('records'),
-                columns=[{"name": i, "id": i} for i in main_df.columns],
-                page_size=12,
-                sort_action='native',
-                column_selectable='single',
-                style_table={'overflowX': 'auto'},
-                id='table-container',
-            )
-        ], span=6),
-        dmc.Col([
-            dcc.Graph(figure={}, id='graph-placeholder')
-        ], span=6),
-    ]),
+app.layout = html.Div(
+    children=[
+        html.Div(children="Defender Comparison"),
+        html.Hr(),
+        html.Div(
+            children=[
+                dcc.Dropdown(
+                    id='player-input',
+                    placeholder="Please select all players you want to analyze",
+                    options=[{"label": i, "value": i} for i in names],
+                    multi=True,
+                    #value=list(main_df['Name']),
+                    #value=main_df.Name.values,
+                    style={"width": 800},
+                ),
+            ]
+        ),
+        dash_table.DataTable(
+            data=main_df.to_dict('records'),
+            columns=[{"name": i, "id": i} for i in defender_stats],
+            page_size=12,
+            sort_action='native',
+            column_selectable='single',
+            style_table={'overflowX': 'auto'},
+            id='table-container',
+        ),
+        dcc.RadioItems(options=['Tck/90', 'Shts Blckd/90'], value='Tck/90',  id='controls-and-radio-item'),
+        dcc.Graph(figure={}, id='graph-placeholder')
+    ]
+)
 
-], fluid=True)
 
 # Add controls to build the interaction
 @callback(
     Output(component_id='graph-placeholder', component_property='figure'),
-    Input(component_id='player-input', component_property='value')
+    Input(component_id='player-input', component_property='value'),
+    Input(component_id='controls-and-radio-item', component_property='value')
 )
-def update_graph(col_chosen):
-    fig = px.scatter(data_frame=main_df, x='Tck/90', y='Shts Blckd/90', title="defender_metrics", hover_name="Name")
+def update_graph(players_chosen, col_chosen):
+    figure_df = update_dataframe(players_chosen)
+    fig = px.scatter(data_frame=figure_df, x=col_chosen, y='Shts Blckd/90', title="defender_metrics", hover_name="Name")
 
     return fig
 
@@ -74,9 +78,13 @@ def update_graph(col_chosen):
 )
 def update_dataframe(players_chosen):
     """Return a dataframe with chosen players."""
-    player_df =  main_df[df.Name.isin(players_chosen)]
+    try:
+        player_df =  main_df[main_df.Name.isin(players_chosen)]
+        return player_df.to_dict('records')
+    except TypeError:
+        return main_df.to_dict('records')
 
-    return player_df.to_dict('records')
+
 
 # Run the App
 if __name__ == '__main__':
