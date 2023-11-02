@@ -270,7 +270,9 @@ radio_items_dict = {
 }
 
 ## Get FM data
-html_file = "./raw_data/stats.html"
+#html_file = "./raw_data/stats.html"
+html_file = f"/data/stats.html"
+
 
 df = pd.read_html(html_file)
 main_df = df[0]

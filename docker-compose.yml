@@ -10,3 +10,5 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8050:8050"
+    volumes:
+      - ./raw_data:/data
