@@ -1,9 +1,12 @@
+#https://dash-bootstrap-components.opensource.faculty.ai/docs/components/layout/
+
 #defender_fig = px.scatter(data_frame=df, x='Tck/90', y='Shts Blckd/90', title="defender_metrics", hover_name="Name")
 
 from dash import Dash, html, dash_table, dcc, callback, Output, Input, State
 import pandas as pd
 import plotly.express as px
 import dash_mantine_components as dmc
+import dash_bootstrap_components as dbc
 
 ## Get FM data
 html_file = "./raw_data/stats.html"
@@ -23,16 +26,23 @@ defender_df = defender_df[main_df['Name'].isin(defenders)]
 
 
 ## Initialize Dash App
-external_stylesheets = [dmc.theme.DEFAULT_COLORS]
+external_stylesheets = [dbc.themes.COSMO]
 app = Dash(__name__, external_stylesheets=external_stylesheets)
 
 # App layout
-app.layout = html.Div(
-    children=[
-        html.Div(children="Defender Comparison"),
-        html.Hr(),
-        html.Div(
-            children=[
+app.layout = dbc.Container(
+    [
+        dbc.Row(
+            [
+                html.Div(
+                    "Player Comparisons in FM",
+                    className="text-primary text-center fs-3",
+                ),
+            ]
+        ),
+
+        dbc.Row(
+            [
                 dcc.Dropdown(
                     id='player-input',
                     placeholder="Please select all players you want to analyze",
@@ -40,22 +50,55 @@ app.layout = html.Div(
                     multi=True,
                     #value=list(main_df['Name']),
                     #value=main_df.Name.values,
-                    style={"width": 800},
+                    style={"width": 1024},
                 ),
             ]
         ),
-        dash_table.DataTable(
-            data=main_df.to_dict('records'),
-            columns=[{"name": i, "id": i} for i in defender_stats],
-            page_size=12,
-            sort_action='native',
-            column_selectable='single',
-            style_table={'overflowX': 'auto'},
-            id='table-container',
+
+        dbc.Row(
+            [
+                dbc.Col(
+                    dcc.RadioItems(
+                        options=main_df.columns.values,
+                        value='Tck/90',
+                        id='radio-button-x-defender-final',
+                        labelStyle={'display': 'block'},
+                    ),
+                ),
+
+                dbc.Col(
+                    dcc.RadioItems(
+                        options=main_df.columns.values,
+                        value='Tck/90',
+                        id='radio-button-y-defender-final',
+                        style={'width': '100%'},
+                        labelStyle={'display': 'block', 'width': '100%'},
+                    ),
+                ),
+                dbc.Col(
+                    dcc.Graph(
+                        figure={}, 
+                        id='graph-placeholder',
+                        style={'display': 'inline-block'},
+                    ),
+                ),
+            ]
         ),
-        dcc.RadioItems(options=['Tck/90', 'Shts Blckd/90'], value='Tck/90',  id='controls-and-radio-item'),
-        dcc.Graph(figure={}, id='graph-placeholder')
-    ]
+
+        dbc.Row(
+            [
+                dash_table.DataTable(
+                    data=main_df.to_dict('records'),
+                    columns=[{"name": i, "id": i} for i in defender_stats],
+                    page_size=12,
+                    sort_action='native',
+                    column_selectable='single',
+                    style_table={'overflowX': 'auto'},
+                    id='table-container',
+                ),
+            ]
+        ),
+    ], fluid=True
 )
 
 
@@ -63,11 +106,12 @@ app.layout = html.Div(
 @callback(
     Output(component_id='graph-placeholder', component_property='figure'),
     Input(component_id='player-input', component_property='value'),
-    Input(component_id='controls-and-radio-item', component_property='value')
+    Input(component_id='radio-button-x-defender-final', component_property='value'),
+    Input(component_id='radio-button-y-defender-final', component_property='value')
 )
-def update_graph(players_chosen, col_chosen):
+def update_graph(players_chosen, x_chosen, y_chosen):
     figure_df = update_dataframe(players_chosen)
-    fig = px.scatter(data_frame=figure_df, x=col_chosen, y='Shts Blckd/90', title="defender_metrics", hover_name="Name")
+    fig = px.scatter(data_frame=figure_df, x=x_chosen, y=y_chosen, title="defender_metrics", hover_name="Name")
 
     return fig
 
