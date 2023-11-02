@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY requirements.txt .
 
+RUN apt update
 RUN apt install -y gcc python3-dev
 
 RUN pip install --upgrade pip
